@@ -8,7 +8,9 @@ import {
   View,
   Text,
   NativeSyntheticEvent,
-  NativeScrollEvent, ViewStyle, TextStyle,
+  NativeScrollEvent,
+  ViewStyle,
+  TextStyle,
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { defaultProps, propTypes } from './SegmentedPickerPropTypes';
@@ -65,15 +67,15 @@ export interface Props {
   backgroundColor: string;
   // Events
   onValueChange: (event: SelectionEvent) => void;
-  onCancel: (event: Selections) => void,
-  onConfirm: (event: Selections) => void,
-  onClose: () => void,
+  onCancel: (event: Selections) => void;
+  onConfirm: (event: Selections) => void;
+  onClose: () => void;
   // custom
-  CustomBottomBar?: React.FC<{onConfirm: (event: Selections) => void}>,
-  CustomToolBar?: ReactNode,
-  SelectionComponent?: ReactNode,
-  columnStyles?: ViewStyle
-  itemTextStyle?: TextStyle
+  CustomBottomBar?: React.FC<{ onConfirm: (event: Selections) => void }>;
+  CustomToolBar?: ReactNode;
+  SelectionComponent?: ReactNode;
+  columnStyles?: ViewStyle;
+  itemTextStyle?: TextStyle;
 }
 
 interface State {
@@ -96,12 +98,11 @@ export default class SegmentedPicker extends Component<Props, State> {
    * @param options {PickerOptions}
    * @return {PickerOptions}
    */
-  static ApplyPickerOptionDefaults = (options: PickerOptions): PickerOptions => (
-    options.map(column => ({
+  static ApplyPickerOptionDefaults = (options: PickerOptions): PickerOptions =>
+    options.map((column) => ({
       ...column,
       flex: column.flex || 1,
-    }))
-  );
+    }));
 
   cache: Cache = new Cache(); // Used as an internal synchronous state (fast)
   uiPickerManager: UIPickerManager = new UIPickerManager();
@@ -133,7 +134,11 @@ export default class SegmentedPicker extends Component<Props, State> {
   componentDidUpdate(prevProps: Props): void {
     const { visible: visibleProp } = this.props;
     const { visible: visibleState } = this.state;
-    if (visibleProp === true && prevProps.visible !== true && visibleState !== true) {
+    if (
+      visibleProp === true &&
+      prevProps.visible !== true &&
+      visibleState !== true
+    ) {
       this.show();
     }
     if (visibleProp === false && prevProps.visible === true) {
@@ -148,7 +153,7 @@ export default class SegmentedPicker extends Component<Props, State> {
    */
   show = (): Promise<void> => {
     this.setState({ visible: true });
-    return new Promise(resolve => setTimeout(resolve, ANIMATION_TIME));
+    return new Promise((resolve) => setTimeout(resolve, ANIMATION_TIME));
   };
 
   /**
@@ -156,11 +161,11 @@ export default class SegmentedPicker extends Component<Props, State> {
    * External Usage: `ref.current.hide()`
    * @return {Promise<void>}
    */
-  hide = async (): Promise<void> => (
+  hide = async (): Promise<void> =>
     new Promise(async (resolve) => {
       if (Platform.OS === 'ios') {
         this.setState({ visible: false }, async () => {
-          await new Promise(done => setTimeout(done, ANIMATION_TIME));
+          await new Promise((done) => setTimeout(done, ANIMATION_TIME));
           this.cache.purge();
           resolve();
         });
@@ -171,8 +176,7 @@ export default class SegmentedPicker extends Component<Props, State> {
           resolve();
         });
       }
-    })
-  );
+    });
 
   /**
    * Selects a specific picker item `label` in the picklist and focuses it.
@@ -250,19 +254,22 @@ export default class SegmentedPicker extends Component<Props, State> {
       return;
     }
 
-    list.scrollToIndex({
-      index,
-      animated,
-    });
     const items = this.columnItems(column);
-    if (!this.selectionChanges[column]
-      || (this.selectionChanges[column]
-        && this.selectionChanges[column] !== items[index].value)
+    if (
+      !this.selectionChanges[column] ||
+      (this.selectionChanges[column] &&
+        this.selectionChanges[column] !== items[index].value)
     ) {
       this.selectionChanges = {
         ...this.selectionChanges,
         [column]: items[index].value,
       };
+
+      list.scrollToIndex({
+        index,
+        animated,
+      });
+
       if (emitEvent) {
         onValueChange({ column, value: items[index].value });
       }
@@ -276,17 +283,15 @@ export default class SegmentedPicker extends Component<Props, State> {
    */
   getCurrentSelections = async (): Promise<Selections> => {
     if (this.isNative()) {
-      const nativeSelections = await this.uiPickerManager.getCurrentSelections();
+      const nativeSelections =
+        await this.uiPickerManager.getCurrentSelections();
       return nativeSelections;
     }
     const { options } = this.props;
     return Promise.resolve(
       options.reduce((columns, column) => {
         const lastOffset = this.cache.get(`${LAST_SCROLL_OFFSET}${column.key}`);
-        const index = this.nearestOptionIndex(
-          lastOffset || 0,
-          column.key,
-        );
+        const index = this.nearestOptionIndex(lastOffset || 0, column.key);
         const items = this.columnItems(column.key);
         return {
           ...columns,
@@ -302,25 +307,23 @@ export default class SegmentedPicker extends Component<Props, State> {
    * Currently only available as an opt-in option for iOS devices.
    * @return {boolean}
    */
-  private isNative = (): boolean => (
-    this.props.native && Platform.OS === 'ios'
-  );
+  private isNative = (): boolean => this.props.native && Platform.OS === 'ios';
 
   /**
    * Filters the `options` prop for a specific column `key`.
    * @param {string} key
    * @return {PickerColumn}
    */
-  private getColumn = (key: string): PickerColumn => (
-    this.props.options.filter(c => c.key === key)[0]
-  );
+  private getColumn = (key: string): PickerColumn =>
+    this.props.options.filter((c) => c.key === key)[0];
 
   /**
    * Returns the picker list items for a specific column `key`.
    * @param {string} key
    * @return {Array<PickerItem>}
    */
-  private columnItems = (key: string): Array<PickerItem> => this.getColumn(key)?.items || [];
+  private columnItems = (key: string): Array<PickerItem> =>
+    this.getColumn(key)?.items || [];
 
   /**
    * @private
@@ -330,9 +333,7 @@ export default class SegmentedPicker extends Component<Props, State> {
    */
   private findItemIndexByLabel = (label: string, column: string): number => {
     const items = this.columnItems(column);
-    return items.findIndex(item => (
-      item.label === label
-    ));
+    return items.findIndex((item) => item.label === label);
   };
 
   /**
@@ -343,9 +344,7 @@ export default class SegmentedPicker extends Component<Props, State> {
    */
   private findItemIndexByValue = (value: string, column: string): number => {
     const items = this.columnItems(column);
-    return items.findIndex(item => (
-      item.value === value
-    ));
+    return items.findIndex((item) => item.value === value);
   };
 
   /**
@@ -359,26 +358,24 @@ export default class SegmentedPicker extends Component<Props, State> {
     if (!dirty) {
       setTimeout(() => {
         // User defined default selections
-        Object.keys(defaultSelections)
-          .forEach(column => (
-            this.selectValue(
-              defaultSelections[column],
-              column,
-              false,
-              false,
-              true,
-            )
-          ));
+        Object.keys(defaultSelections).forEach((column) =>
+          this.selectValue(
+            defaultSelections[column],
+            column,
+            false,
+            false,
+            true,
+          ),
+        );
 
         // Set all other selections to index 0
         options
-          .filter(column => (
-            !Object.keys(defaultSelections).includes(column.key)
-            && this.columnItems(column.key).length > 0
-          ))
-          .forEach(column => (
-            this.selectIndex(0, column.key, false, false)
-          ));
+          .filter(
+            (column) =>
+              !Object.keys(defaultSelections).includes(column.key) &&
+              this.columnItems(column.key).length > 0,
+          )
+          .forEach((column) => this.selectIndex(0, column.key, false, false));
       }, 0);
 
       this.cache.set(IS_DIRTY, true);
@@ -391,7 +388,10 @@ export default class SegmentedPicker extends Component<Props, State> {
    * @param {object} ref: The column's rendered FlatList component.
    * @return {void}
    */
-  private setFlatListRef = (column: string, ref: FlatList<any> | null): void => {
+  private setFlatListRef = (
+    column: string,
+    ref: FlatList<any> | null,
+  ): void => {
     if (ref) {
       this.cache.set(`${FLAT_LIST_REF}${column}`, ref);
       this.setDefaultSelections();
@@ -415,7 +415,7 @@ export default class SegmentedPicker extends Component<Props, State> {
    */
   private pickersVerticalPadding = (): number => {
     const { pickersHeight } = this.state;
-    return (pickersHeight - ITEM_HEIGHT - (GUTTER_HEIGHT * 2)) / 2;
+    return (pickersHeight - ITEM_HEIGHT - GUTTER_HEIGHT * 2) / 2;
   };
 
   /**
@@ -429,12 +429,11 @@ export default class SegmentedPicker extends Component<Props, State> {
    */
   private nearestOptionIndex = (offsetY: number, column: string): number => {
     const scrollDirection = this.cache.get(`${SCROLL_DIRECTION}${column}`) || 1;
-    const rounding = (scrollDirection === 0) ? 'floor' : 'ceil';
-    const adjustedOffsetY = (scrollDirection === 0) ? (
-      (offsetY / ITEM_HEIGHT) + 0.35
-    ) : (
-      (offsetY / ITEM_HEIGHT) - 0.35
-    );
+    const rounding = scrollDirection === 0 ? 'floor' : 'ceil';
+    const adjustedOffsetY =
+      scrollDirection === 0
+        ? offsetY / ITEM_HEIGHT + 0.35
+        : offsetY / ITEM_HEIGHT - 0.35;
     let nearestArrayMember = Math[rounding](adjustedOffsetY) || 0;
     // Safety checks making sure we don't return an out of range index
     const columnSize = this.columnItems(column).length;
@@ -453,7 +452,10 @@ export default class SegmentedPicker extends Component<Props, State> {
    * @param {string} column
    * @return {void}
    */
-  private onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>, column: string): void => {
+  private onScroll = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+    column: string,
+  ): void => {
     if (!event.nativeEvent) return;
     const { y } = event.nativeEvent.contentOffset;
     const lastScrollOffset = this.cache.get(`${LAST_SCROLL_OFFSET}${column}`);
@@ -489,7 +491,10 @@ export default class SegmentedPicker extends Component<Props, State> {
     column: string,
   ): void => {
     this.cache.set(`${IS_DRAGGING}${column}`, false);
-    if (Platform.OS === 'ios' && !this.cache.get(`${IS_MOMENTUM_SCROLLING}${column}`)) {
+    if (
+      Platform.OS === 'ios' &&
+      !this.cache.get(`${IS_MOMENTUM_SCROLLING}${column}`)
+    ) {
       // Not required on Android because all scrolls exit as momentum scrolls,
       // so the below method has already been called prior to this event.
       // Timeout is to temporarily allow raising fingers.
@@ -547,7 +552,9 @@ export default class SegmentedPicker extends Component<Props, State> {
     const nearestOptionIndex = this.nearestOptionIndex(y, column);
     setTimeout(() => {
       const isDragging = this.cache.get(`${IS_DRAGGING}${column}`);
-      const isMomentumScrolling = this.cache.get(`${IS_MOMENTUM_SCROLLING}${column}`);
+      const isMomentumScrolling = this.cache.get(
+        `${IS_MOMENTUM_SCROLLING}${column}`,
+      );
       if (!isDragging && !isMomentumScrolling) {
         this.selectIndex(nearestOptionIndex, column);
       }
@@ -601,12 +608,7 @@ export default class SegmentedPicker extends Component<Props, State> {
    * @return {ReactElement}
    */
   private renderPickerItem = ({
-    item: {
-      label,
-      column,
-      key,
-      testID,
-    },
+    item: { label, column, key, testID },
     index,
   }: {
     item: RenderablePickerItem;
@@ -618,12 +620,13 @@ export default class SegmentedPicker extends Component<Props, State> {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => this.selectIndex(index, column)}
-          testID={testID || key}
-        >
+          testID={testID || key}>
           <Text
             numberOfLines={1}
-            style={[styles.pickerItemText, itemTextStyle || { color: pickerItemTextColor }]}
-          >
+            style={[
+              styles.pickerItemText,
+              itemTextStyle || { color: pickerItemTextColor },
+            ]}>
             {label}
           </Text>
         </TouchableOpacity>
@@ -638,9 +641,9 @@ export default class SegmentedPicker extends Component<Props, State> {
    * @param {UIPickerValueChangeEvent}
    * @return {void}
    */
-  private uiPickerValueChange = (
-    { nativeEvent: { column, value } }: UIPickerValueChangeEvent,
-  ): void => {
+  private uiPickerValueChange = ({
+    nativeEvent: { column, value },
+  }: UIPickerValueChangeEvent): void => {
     const { onValueChange } = this.props;
     onValueChange({ column, value });
   };
@@ -675,8 +678,7 @@ export default class SegmentedPicker extends Component<Props, State> {
           default: 'none',
         })}
         transparent
-        onRequestClose={this.onCancel}
-      >
+        onRequestClose={this.onCancel}>
         <Animatable.View
           useNativeDriver
           animation="fadeIn"
@@ -684,9 +686,10 @@ export default class SegmentedPicker extends Component<Props, State> {
           duration={ANIMATION_TIME}
           ref={this.modalContainerRef}
           style={[styles.modalContainer]}
-          testID={TEST_IDS.PICKER}
-        >
-          <TouchableWithoutFeedback onPress={this.onCancel} testID={TEST_IDS.CLOSE_AREA}>
+          testID={TEST_IDS.PICKER}>
+          <TouchableWithoutFeedback
+            onPress={this.onCancel}
+            testID={TEST_IDS.CLOSE_AREA}>
             <View style={styles.closeableContainer} />
           </TouchableWithoutFeedback>
 
@@ -700,20 +703,25 @@ export default class SegmentedPicker extends Component<Props, State> {
             delay={100}
             duration={ANIMATION_TIME}
             ref={this.pickerContainerRef}
-            style={[styles.pickerContainer, {
-              minHeight: `${size * 100}%`, backgroundColor, borderRadius: 10, marginRight: '8%',
-            }]}
-          >
+            style={[
+              styles.pickerContainer,
+              {
+                minHeight: `${size * 100}%`,
+                backgroundColor,
+                borderRadius: 10,
+                marginRight: '8%',
+              },
+            ]}>
             {CustomToolBar || (
-            <Toolbar
-              confirmText={confirmText}
-              titleText={titleText}
-              confirmTextColor={confirmTextColor}
-              toolbarBackground={toolbarBackgroundColor}
-              toolbarBorderColor={toolbarBorderColor}
-              onConfirm={this.onConfirm}
-              onClose={this.onClose}
-            />
+              <Toolbar
+                confirmText={confirmText}
+                titleText={titleText}
+                confirmTextColor={confirmTextColor}
+                toolbarBackground={toolbarBackgroundColor}
+                toolbarBorderColor={toolbarBorderColor}
+                onConfirm={this.onConfirm}
+                onClose={this.onClose}
+              />
             )}
 
             <View style={styles.selectableArea}>
@@ -746,65 +754,70 @@ export default class SegmentedPicker extends Component<Props, State> {
                     backgroundColor={selectionBackgroundColor}
                     borderColor={selectionBorderColor}
                   />
-                  <View style={styles.pickerColumns} onLayout={this.measurePickersHeight}>
-                    {SegmentedPicker.ApplyPickerOptionDefaults(options).map((
-                      { key: column, testID: columnTestID, flex },
-                    ) => (
-                      <View style={[styles.pickerColumn, { flex }]} key={`${column}`}>
-                        <View style={[styles.pickerList, columnStyles]}>
-                          <FlatList
-                            data={this.columnItems(column).map(({
-                              label,
-                              value,
-                              key,
-                              testID,
-                            }) => ({
-                              label,
-                              value,
-                              column,
-                              testID,
-                              key: `${column}_${key || label}`,
-                            }))}
-                            renderItem={this.renderPickerItem}
-                            keyExtractor={item => item.key}
-                            initialNumToRender={40}
-                            getItemLayout={(data, index) => (
-                              {
+                  <View
+                    style={styles.pickerColumns}
+                    onLayout={this.measurePickersHeight}>
+                    {SegmentedPicker.ApplyPickerOptionDefaults(options).map(
+                      ({ key: column, testID: columnTestID, flex }) => (
+                        <View
+                          style={[styles.pickerColumn, { flex }]}
+                          key={`${column}`}>
+                          <View style={[styles.pickerList, columnStyles]}>
+                            <FlatList
+                              data={this.columnItems(column).map(
+                                ({ label, value, key, testID }) => ({
+                                  label,
+                                  value,
+                                  column,
+                                  testID,
+                                  key: `${column}_${key || label}`,
+                                }),
+                              )}
+                              renderItem={this.renderPickerItem}
+                              keyExtractor={(item) => item.key}
+                              initialNumToRender={40}
+                              getItemLayout={(data, index) => ({
                                 length: ITEM_HEIGHT,
                                 offset: ITEM_HEIGHT * index,
                                 index,
+                              })}
+                              contentContainerStyle={{
+                                paddingTop: this.pickersVerticalPadding(),
+                                paddingBottom: this.pickersVerticalPadding(),
+                              }}
+                              showsVerticalScrollIndicator={false}
+                              ref={(ref) => this.setFlatListRef(column, ref)}
+                              onScroll={(event) => this.onScroll(event, column)}
+                              onScrollBeginDrag={() =>
+                                this.onScrollBeginDrag(column)
                               }
-                            )}
-                            contentContainerStyle={{
-                              paddingTop: this.pickersVerticalPadding(),
-                              paddingBottom: this.pickersVerticalPadding(),
-                            }}
-                            showsVerticalScrollIndicator={false}
-                            ref={ref => this.setFlatListRef(column, ref)}
-                            onScroll={event => this.onScroll(event, column)}
-                            onScrollBeginDrag={() => this.onScrollBeginDrag(column)}
-                            onScrollEndDrag={event => this.onScrollEndDrag(event, column)}
-                            onMomentumScrollBegin={event => (
-                              this.onMomentumScrollBegin(event, column)
-                            )}
-                            onMomentumScrollEnd={event => (
-                              this.onMomentumScrollEnd(event, column)
-                            )}
-                            scrollEventThrottle={32}
-                            decelerationRate={Platform.select({
-                              ios: 1,
-                              android: undefined,
-                            })}
-                            testID={`${columnTestID}`}
-                          />
+                              onScrollEndDrag={(event) =>
+                                this.onScrollEndDrag(event, column)
+                              }
+                              onMomentumScrollBegin={(event) =>
+                                this.onMomentumScrollBegin(event, column)
+                              }
+                              onMomentumScrollEnd={(event) =>
+                                this.onMomentumScrollEnd(event, column)
+                              }
+                              scrollEventThrottle={32}
+                              decelerationRate={Platform.select({
+                                ios: 1,
+                                android: undefined,
+                              })}
+                              testID={`${columnTestID}`}
+                            />
+                          </View>
                         </View>
-                      </View>
-                    ))}
+                      ),
+                    )}
                   </View>
                 </>
               )}
             </View>
-            {CustomBottomBar ? <CustomBottomBar onConfirm={this.onConfirm} /> : (
+            {CustomBottomBar ? (
+              <CustomBottomBar onConfirm={this.onConfirm} />
+            ) : (
               <BottomBar
                 confirmText={confirmText}
                 toolbarBackground={toolbarBackgroundColor}
@@ -814,7 +827,9 @@ export default class SegmentedPicker extends Component<Props, State> {
               />
             )}
           </Animatable.View>
-          <TouchableWithoutFeedback onPress={this.onCancel} testID={TEST_IDS.CLOSE_AREA}>
+          <TouchableWithoutFeedback
+            onPress={this.onCancel}
+            testID={TEST_IDS.CLOSE_AREA}>
             <View style={styles.closeableContainer} />
           </TouchableWithoutFeedback>
         </Animatable.View>
