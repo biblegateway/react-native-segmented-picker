@@ -250,10 +250,6 @@ export default class SegmentedPicker extends Component<Props, State> {
       return;
     }
 
-    list.scrollToIndex({
-      index,
-      animated,
-    });
     const items = this.columnItems(column);
     if (!this.selectionChanges[column]
       || (this.selectionChanges[column]
@@ -263,6 +259,12 @@ export default class SegmentedPicker extends Component<Props, State> {
         ...this.selectionChanges,
         [column]: items[index].value,
       };
+
+      list.scrollToIndex({
+        index,
+        animated,
+      });
+
       if (emitEvent) {
         onValueChange({ column, value: items[index].value });
       }
