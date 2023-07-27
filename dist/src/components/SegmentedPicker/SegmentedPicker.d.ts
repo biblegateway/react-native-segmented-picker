@@ -1,5 +1,4 @@
-import React, { Component, ReactNode } from 'react';
-import { ViewStyle, TextStyle } from 'react-native';
+import React, { Component } from 'react';
 import Cache from '../../services/Cache';
 import UIPickerManager from '../../services/UIPickerManager';
 import { PickerOptions, Selections, SelectionEvent } from '../../config/interfaces';
@@ -23,13 +22,6 @@ export interface Props {
     onCancel: (event: Selections) => void;
     onConfirm: (event: Selections) => void;
     onClose: () => void;
-    CustomBottomBar?: React.FC<{
-        onConfirm: (event: Selections) => void;
-    }>;
-    CustomToolBar?: ReactNode;
-    SelectionComponent?: ReactNode;
-    columnStyles?: ViewStyle;
-    itemTextStyle?: TextStyle;
 }
 interface State {
     visible: boolean;

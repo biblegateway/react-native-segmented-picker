@@ -113,15 +113,13 @@ var styles = StyleSheet.create({
     padding: '8%'
   },
   closeableContainer: {
-    flex: 1,
     width: '100%'
   },
   pickerContainer: {
     width: '100%',
     flex: 1,
     flexDirection: 'column',
-    alignItems: 'flex-start',
-    overflow: 'hidden'
+    alignItems: 'flex-start'
   },
   selectableArea: {
     flex: 1,
@@ -130,7 +128,7 @@ var styles = StyleSheet.create({
   pickerColumns: {
     flex: 1,
     flexDirection: 'row',
-    paddingTop: GUTTER_HEIGHT * 2.2,
+    paddingTop: GUTTER_HEIGHT,
     paddingRight: 0,
     paddingBottom: GUTTER_HEIGHT,
     paddingLeft: GUTTER_WIDTH
@@ -142,12 +140,12 @@ var styles = StyleSheet.create({
   },
   pickerList: {
     width: '100%',
-    height: 'auto',
-    alignItems: 'flex-start'
+    height: 'auto'
   },
   pickerItem: {
     width: '100%',
-    height: ITEM_HEIGHT
+    height: ITEM_HEIGHT,
+    justifyContent: 'center'
   },
   pickerItemText: {
     fontSize: 15,
@@ -328,15 +326,12 @@ var styles$3 = StyleSheet.create({
 
 var SelectionMarker = (({
   backgroundColor,
-  borderColor,
-  SelectionComponent
+  borderColor
 }) =>
 /*#__PURE__*/
 React.createElement(View, {
   style: styles$3.selectionMarkerContainer
-}, SelectionComponent ||
-/*#__PURE__*/
-React.createElement(React.Fragment, null,
+},
 /*#__PURE__*/
 React.createElement(View, {
   style: [styles$3.selectionMarkerBorder, {
@@ -354,7 +349,7 @@ React.createElement(View, {
   style: [styles$3.selectionMarkerBorder, {
     backgroundColor: borderColor
   }]
-}))));
+})));
 
 var UIPicker = requireNativeComponent('UIPicker');
 
@@ -653,15 +648,15 @@ class SegmentedPicker extends Component {
         return;
       }
 
-      list.scrollToIndex({
-        index,
-        animated
-      });
       const items = this.columnItems(column);
 
       if (!this.selectionChanges[column] || this.selectionChanges[column] && this.selectionChanges[column] !== items[index].value) {
         this.selectionChanges = Object.assign(Object.assign({}, this.selectionChanges), {
           [column]: items[index].value
+        });
+        list.scrollToIndex({
+          index,
+          animated
         });
 
         if (emitEvent) {
@@ -1022,8 +1017,7 @@ class SegmentedPicker extends Component {
       index
     }) => {
       const {
-        pickerItemTextColor,
-        itemTextStyle
+        pickerItemTextColor
       } = this.props;
       return (
         /*#__PURE__*/
@@ -1039,7 +1033,7 @@ class SegmentedPicker extends Component {
         /*#__PURE__*/
         React.createElement(Text, {
           numberOfLines: 1,
-          style: [styles.pickerItemText, itemTextStyle || {
+          style: [styles.pickerItemText, {
             color: pickerItemTextColor
           }]
         }, label)))
@@ -1124,11 +1118,7 @@ class SegmentedPicker extends Component {
       toolbarBorderColor,
       selectionBackgroundColor,
       selectionBorderColor,
-      backgroundColor,
-      CustomBottomBar,
-      CustomToolBar,
-      SelectionComponent,
-      columnStyles
+      backgroundColor
     } = this.props;
     return (
       /*#__PURE__*/
@@ -1158,7 +1148,9 @@ class SegmentedPicker extends Component {
       },
       /*#__PURE__*/
       React.createElement(View, {
-        style: styles.closeableContainer
+        style: [styles.closeableContainer, {
+          height: `${22.5}%`
+        }]
       })),
       /*#__PURE__*/
       React.createElement(View$1, {
@@ -1178,12 +1170,12 @@ class SegmentedPicker extends Component {
         duration: ANIMATION_TIME,
         ref: this.pickerContainerRef,
         style: [styles.pickerContainer, {
-          minHeight: `${size * 100}%`,
+          height: `${55}%`,
           backgroundColor,
           borderRadius: 10,
           marginRight: '8%'
         }]
-      }, CustomToolBar ||
+      },
       /*#__PURE__*/
       React.createElement(Toolbar, {
         confirmText: confirmText,
@@ -1222,7 +1214,6 @@ class SegmentedPicker extends Component {
       React.createElement(React.Fragment, null,
       /*#__PURE__*/
       React.createElement(SelectionMarker, {
-        SelectionComponent: SelectionComponent,
         backgroundColor: selectionBackgroundColor,
         borderColor: selectionBorderColor
       }),
@@ -1244,7 +1235,7 @@ class SegmentedPicker extends Component {
       },
       /*#__PURE__*/
       React.createElement(View, {
-        style: [styles.pickerList, columnStyles]
+        style: styles.pickerList
       },
       /*#__PURE__*/
       React.createElement(FlatList, {
@@ -1285,11 +1276,7 @@ class SegmentedPicker extends Component {
           android: undefined
         }),
         testID: `${columnTestID}`
-      }))))))), CustomBottomBar ?
-      /*#__PURE__*/
-      React.createElement(CustomBottomBar, {
-        onConfirm: this.onConfirm
-      }) :
+      }))))))),
       /*#__PURE__*/
       React.createElement(Bottombar, {
         confirmText: confirmText,
@@ -1305,7 +1292,9 @@ class SegmentedPicker extends Component {
       },
       /*#__PURE__*/
       React.createElement(View, {
-        style: styles.closeableContainer
+        style: [styles.closeableContainer, {
+          height: `${22.5}%`
+        }]
       }))))
     );
   }
