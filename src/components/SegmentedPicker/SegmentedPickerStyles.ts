@@ -49,6 +49,16 @@ export default StyleSheet.create({
     position: 'relative',
   },
 
+  pickerColumnHeader: {
+    paddingLeft: 24,
+    marginRight: 0,
+    paddingBottom: 8
+  },
+
+  headerSelections: {
+    flexDirection: 'row'
+  },
+
   pickerList: {
     width: '100%',
     height: 'auto',
