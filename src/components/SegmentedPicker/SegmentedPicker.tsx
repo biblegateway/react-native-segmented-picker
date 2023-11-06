@@ -9,6 +9,7 @@ import {
   Text,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  TextStyle,
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { defaultProps, propTypes } from './SegmentedPickerPropTypes';
@@ -61,18 +62,28 @@ export interface Props {
   toolbarBackgroundColor: string;
   toolbarBorderColor: string;
   selectionBackgroundColor: string;
-  selectionBorderColor: string;
+  selectionBorderColor?: string;
   backgroundColor: string;
   // Events
   onValueChange: (event: SelectionEvent) => void;
   onCancel: (event: Selections) => void,
   onConfirm: (event: Selections) => void,
   onClose: () => void,
+  renderBottomBar: (selected: string[] | unknown) => React.FC,
+  renderHeader: (selected: string[] | unknown) => React.FC,
+  customBottomBar: (item: string[], onConfirm: () => void) => ReactElement<any>,
+  customHeader: (item: string[], onClose: () => void) => ReactElement<any>,
+  selectionSeparator: ReactElement<any>,
+  pickerTextFont: TextStyle;
+  pickerColumnHeaderTextStyle: TextStyle;
+  pickerColumsStyle: TextStyle,
+  selectionBorder: TextStyle,
 }
 
 interface State {
   visible: boolean;
   pickersHeight: number;
+  selected: string[];
 }
 
 interface RenderablePickerItem extends PickerItem {
@@ -108,6 +119,7 @@ export default class SegmentedPicker extends Component<Props, State> {
     this.state = {
       visible: false,
       pickersHeight: 0,
+      selected: [],
     };
   }
 
@@ -120,7 +132,6 @@ export default class SegmentedPicker extends Component<Props, State> {
       this.show();
     }
   }
-
   /**
    * Animates in-and-out when toggling picker visibility with the `visible` prop.
    */
@@ -134,6 +145,16 @@ export default class SegmentedPicker extends Component<Props, State> {
       this.hide();
     }
   }
+
+  setChapterName = async (): Promise<void> => {
+    const selections = { ...(await this.getCurrentSelections()) };
+    const selectedItems = this.props.options.map((option) => {
+      const { key } = option;
+      const selectedItem = this.columnItems(key).find(item => item.value === selections[key]);
+      return selectedItem ? selectedItem.label : null;
+    }).filter(label => label !== null);
+    this.setState({ selected: selectedItems as string[] });
+  };
 
   /**
    * Make the picker visible on the screen.
@@ -374,8 +395,8 @@ export default class SegmentedPicker extends Component<Props, State> {
             this.selectIndex(0, column.key, false, false)
           ));
       }, 0);
-
       this.cache.set(IS_DIRTY, true);
+      setTimeout(() => this.setChapterName(), 200);
     }
   };
 
@@ -478,10 +499,10 @@ export default class SegmentedPicker extends Component<Props, State> {
    * @param {string} column
    * @return {void}
    */
-  private onScrollEndDrag = (
+  private onScrollEndDrag = async (
     event: NativeSyntheticEvent<NativeScrollEvent>,
     column: string,
-  ): void => {
+  ): Promise<void> => {
     this.cache.set(`${IS_DRAGGING}${column}`, false);
     if (Platform.OS === 'ios' && !this.cache.get(`${IS_MOMENTUM_SCROLLING}${column}`)) {
       // Not required on Android because all scrolls exit as momentum scrolls,
@@ -489,6 +510,7 @@ export default class SegmentedPicker extends Component<Props, State> {
       // Timeout is to temporarily allow raising fingers.
       this.selectIndexFromScrollPosition(event, column, 280);
     }
+    this.setChapterName();
   };
 
   /**
@@ -606,7 +628,7 @@ export default class SegmentedPicker extends Component<Props, State> {
     item: RenderablePickerItem;
     index: number;
   }): ReactElement => {
-    const { pickerItemTextColor } = this.props;
+    const { pickerItemTextColor, pickerTextFont } = this.props;
     return (
       <View style={styles.pickerItem}>
         <TouchableOpacity
@@ -616,7 +638,7 @@ export default class SegmentedPicker extends Component<Props, State> {
         >
           <Text
             numberOfLines={1}
-            style={[styles.pickerItemText, { color: pickerItemTextColor }]}
+            style={[styles.pickerItemText, { color: pickerItemTextColor }, pickerTextFont]}
           >
             {label}
           </Text>
@@ -639,22 +661,59 @@ export default class SegmentedPicker extends Component<Props, State> {
     onValueChange({ column, value });
   };
 
+  private customBottomBarHandle = (): ReactElement<any> => {
+    const {
+      toolbarBackgroundColor,
+      toolbarBorderColor,
+      confirmText,
+    } = this.props;
+    return this.props.customBottomBar
+      ? this.props.customBottomBar(this.state.selected, this.onConfirm) : (
+        <BottomBar
+          confirmText={confirmText}
+          toolbarBackground={toolbarBackgroundColor}
+          toolbarBorderColor={toolbarBorderColor}
+          onConfirm={this.onConfirm}
+          onClose={this.onClose}
+        />
+      );
+  };
+
+  private customHeaderBarHandle = (): ReactElement<any> => {
+    const {
+      confirmText,
+      titleText,
+      confirmTextColor,
+      toolbarBackgroundColor,
+      toolbarBorderColor,
+    } = this.props;
+    return this.props.customHeader ? this.props.customHeader(this.state.selected, this.onClose) : (
+      <Toolbar
+        confirmText={confirmText}
+        titleText={titleText}
+        confirmTextColor={confirmTextColor}
+        toolbarBackground={toolbarBackgroundColor}
+        toolbarBorderColor={toolbarBorderColor}
+        onConfirm={this.onConfirm}
+        onClose={this.onClose}
+      />
+    );
+  };
+
   render() {
     const { visible } = this.state;
     const {
       nativeTestID,
       options,
       defaultSelections,
-      size,
-      confirmText,
-      titleText,
-      confirmTextColor,
       pickerItemTextColor,
-      toolbarBackgroundColor,
-      toolbarBorderColor,
       selectionBackgroundColor,
       selectionBorderColor,
       backgroundColor,
+      selectionSeparator,
+      pickerColumnHeaderTextStyle,
+      pickerColumsStyle,
+      selectionBorder,
     } = this.props;
 
     return (
@@ -690,18 +749,38 @@ export default class SegmentedPicker extends Component<Props, State> {
             delay={100}
             duration={ANIMATION_TIME}
             ref={this.pickerContainerRef}
-            style={[styles.pickerContainer, { height: `${55}%`, backgroundColor, borderRadius: 10, marginRight: '8%' }]}
+            style={[
+              styles.pickerContainer,
+              {
+                height: `${55}%`,
+                backgroundColor,
+                borderRadius: 10,
+                marginRight: '8%',
+              },
+            ]}
           >
-            <Toolbar
-              confirmText={confirmText}
-              titleText={titleText}
-              confirmTextColor={confirmTextColor}
-              toolbarBackground={toolbarBackgroundColor}
-              toolbarBorderColor={toolbarBorderColor}
-              onConfirm={this.onConfirm}
-              onClose={this.onClose}
-            />
-
+            {this.customHeaderBarHandle()}
+            {pickerColumnHeaderTextStyle
+              && (
+              <View style={styles.headerSelections}>
+                {SegmentedPicker.ApplyPickerOptionDefaults(options).map((
+                  { key: column, flex },
+                ) => (
+                  <View
+                    style={[
+                      styles.pickerColumn,
+                      { flex },
+                      styles.pickerColumnHeader,
+                    ]}
+                    key={`${column}`}
+                  >
+                    <View style={styles.pickerList}>
+                      <Text style={pickerColumnHeaderTextStyle}>{column}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+              )}
             <View style={styles.selectableArea}>
               {/* Native iOS Picker is enabled */}
               {this.isNative() && (
@@ -730,8 +809,13 @@ export default class SegmentedPicker extends Component<Props, State> {
                   <SelectionMarker
                     backgroundColor={selectionBackgroundColor}
                     borderColor={selectionBorderColor}
+                    selectionSeparator={selectionSeparator}
+                    selectionBorder={selectionBorder}
                   />
-                  <View style={styles.pickerColumns} onLayout={this.measurePickersHeight}>
+                  <View
+                    style={[styles.pickerColumns, pickerColumsStyle]}
+                    onLayout={this.measurePickersHeight}
+                  >
                     {SegmentedPicker.ApplyPickerOptionDefaults(options).map((
                       { key: column, testID: columnTestID, flex },
                     ) => (
@@ -789,13 +873,7 @@ export default class SegmentedPicker extends Component<Props, State> {
                 </>
               )}
             </View>
-            <BottomBar
-              confirmText={confirmText}
-              toolbarBackground={toolbarBackgroundColor}
-              toolbarBorderColor={toolbarBorderColor}
-              onConfirm={this.onConfirm}
-              onClose={this.onClose}
-            />
+            {this.customBottomBarHandle()}
           </Animatable.View>
           <TouchableWithoutFeedback onPress={this.onCancel} testID={TEST_IDS.CLOSE_AREA}>
             <View style={[styles.closeableContainer, { height: `${22.5}%` }]} />

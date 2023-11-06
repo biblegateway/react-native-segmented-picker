@@ -4,6 +4,7 @@ export const defaultProps = {
   native: false,
   options: [],
   visible: false,
+  selected: {},
   defaultSelections: {},
   size: 0.45,
   confirmText: 'Done',
