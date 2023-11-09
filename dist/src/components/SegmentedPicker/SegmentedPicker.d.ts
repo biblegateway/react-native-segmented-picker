@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React, { Component, ReactElement } from 'react';
+import { TextStyle } from 'react-native';
 import Cache from '../../services/Cache';
 import UIPickerManager from '../../services/UIPickerManager';
 import { PickerOptions, Selections, SelectionEvent } from '../../config/interfaces';
@@ -16,16 +17,26 @@ export interface Props {
     toolbarBackgroundColor: string;
     toolbarBorderColor: string;
     selectionBackgroundColor: string;
-    selectionBorderColor: string;
+    selectionBorderColor?: string;
     backgroundColor: string;
     onValueChange: (event: SelectionEvent) => void;
     onCancel: (event: Selections) => void;
     onConfirm: (event: Selections) => void;
     onClose: () => void;
+    renderBottomBar: (selected: string[] | unknown) => React.FC;
+    renderHeader: (selected: string[] | unknown) => React.FC;
+    customBottomBar: (item: string[], onConfirm: () => void) => ReactElement<any>;
+    customHeader: (item: string[], onClose: () => void) => ReactElement<any>;
+    selectionSeparator: ReactElement<any>;
+    pickerTextFont: TextStyle;
+    pickerColumnHeaderTextStyle: TextStyle;
+    pickerColumsStyle: TextStyle;
+    selectionBorder: TextStyle;
 }
 interface State {
     visible: boolean;
     pickersHeight: number;
+    selected: string[];
 }
 export default class SegmentedPicker extends Component<Props, State> {
     static propTypes: {
@@ -83,6 +94,7 @@ export default class SegmentedPicker extends Component<Props, State> {
      * Animates in-and-out when toggling picker visibility with the `visible` prop.
      */
     componentDidUpdate(prevProps: Props): void;
+    setChapterName: () => Promise<void>;
     /**
      * Make the picker visible on the screen.
      * External Usage: `ref.current.show()`
@@ -280,6 +292,8 @@ export default class SegmentedPicker extends Component<Props, State> {
      * @return {void}
      */
     private uiPickerValueChange;
+    private customBottomBarHandle;
+    private customHeaderBarHandle;
     render(): JSX.Element;
 }
 export {};

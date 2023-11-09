@@ -7,6 +7,7 @@ const defaultProps = {
   native: false,
   options: [],
   visible: false,
+  selected: {},
   defaultSelections: {},
   size: 0.45,
   confirmText: 'Done',
@@ -73,7 +74,7 @@ const ANIMATION_TIME = 300;
  * Fixed sizing for list items and other UI elements.
  */
 
-const GUTTER_WIDTH = 18;
+const GUTTER_WIDTH = 8;
 const GUTTER_HEIGHT = 5;
 const ITEM_HEIGHTS = {
   ios: 46,
@@ -137,6 +138,14 @@ var styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
     position: 'relative'
+  },
+  pickerColumnHeader: {
+    paddingLeft: 24,
+    marginRight: 0,
+    paddingBottom: 8
+  },
+  headerSelections: {
+    flexDirection: 'row'
   },
   pickerList: {
     width: '100%',
@@ -326,7 +335,9 @@ var styles$3 = StyleSheet.create({
 
 var SelectionMarker = (({
   backgroundColor,
-  borderColor
+  borderColor,
+  selectionSeparator,
+  selectionBorder
 }) =>
 /*#__PURE__*/
 React.createElement(View, {
@@ -341,9 +352,9 @@ React.createElement(View, {
 /*#__PURE__*/
 React.createElement(View, {
   style: [styles$3.selectionMarker, {
-    backgroundColor
-  }]
-}),
+    backgroundColor: backgroundColor
+  }, selectionBorder]
+}, selectionSeparator),
 /*#__PURE__*/
 React.createElement(View, {
   style: [styles$3.selectionMarkerBorder, {
@@ -540,11 +551,26 @@ class SegmentedPicker extends Component {
     this.selectionChanges = {};
     this.modalContainerRef = React.createRef();
     this.pickerContainerRef = React.createRef();
+
+    this.setChapterName = async () => {
+      const selections = Object.assign({}, (await this.getCurrentSelections()));
+      const selectedItems = this.props.options.map(option => {
+        const {
+          key
+        } = option;
+        const selectedItem = this.columnItems(key).find(item => item.value === selections[key]);
+        return selectedItem ? selectedItem.label : null;
+      }).filter(label => label !== null);
+      this.setState({
+        selected: selectedItems
+      });
+    };
     /**
      * Make the picker visible on the screen.
      * External Usage: `ref.current.show()`
      * @return {Promise<void>}
      */
+
 
     this.show = () => {
       this.setState({
@@ -769,6 +795,7 @@ class SegmentedPicker extends Component {
           options.filter(column => !Object.keys(defaultSelections).includes(column.key) && this.columnItems(column.key).length > 0).forEach(column => this.selectIndex(0, column.key, false, false));
         }, 0);
         this.cache.set(IS_DIRTY, true);
+        setTimeout(() => this.setChapterName(), 200);
       }
     };
     /**
@@ -887,7 +914,7 @@ class SegmentedPicker extends Component {
      */
 
 
-    this.onScrollEndDrag = (event, column) => {
+    this.onScrollEndDrag = async (event, column) => {
       this.cache.set(`${IS_DRAGGING}${column}`, false);
 
       if (Platform.OS === 'ios' && !this.cache.get(`${IS_MOMENTUM_SCROLLING}${column}`)) {
@@ -896,6 +923,8 @@ class SegmentedPicker extends Component {
         // Timeout is to temporarily allow raising fingers.
         this.selectIndexFromScrollPosition(event, column, 280);
       }
+
+      this.setChapterName();
     };
     /**
      * @private
@@ -1017,7 +1046,8 @@ class SegmentedPicker extends Component {
       index
     }) => {
       const {
-        pickerItemTextColor
+        pickerItemTextColor,
+        pickerTextFont
       } = this.props;
       return (
         /*#__PURE__*/
@@ -1035,7 +1065,7 @@ class SegmentedPicker extends Component {
           numberOfLines: 1,
           style: [styles.pickerItemText, {
             color: pickerItemTextColor
-          }]
+          }, pickerTextFont]
         }, label)))
       );
     };
@@ -1063,9 +1093,48 @@ class SegmentedPicker extends Component {
       });
     };
 
+    this.customBottomBarHandle = () => {
+      const {
+        toolbarBackgroundColor,
+        toolbarBorderColor,
+        confirmText
+      } = this.props;
+      return this.props.customBottomBar ? this.props.customBottomBar(this.state.selected, this.onConfirm) :
+      /*#__PURE__*/
+      React.createElement(Bottombar, {
+        confirmText: confirmText,
+        toolbarBackground: toolbarBackgroundColor,
+        toolbarBorderColor: toolbarBorderColor,
+        onConfirm: this.onConfirm,
+        onClose: this.onClose
+      });
+    };
+
+    this.customHeaderBarHandle = () => {
+      const {
+        confirmText,
+        titleText,
+        confirmTextColor,
+        toolbarBackgroundColor,
+        toolbarBorderColor
+      } = this.props;
+      return this.props.customHeader ? this.props.customHeader(this.state.selected, this.onClose) :
+      /*#__PURE__*/
+      React.createElement(Toolbar, {
+        confirmText: confirmText,
+        titleText: titleText,
+        confirmTextColor: confirmTextColor,
+        toolbarBackground: toolbarBackgroundColor,
+        toolbarBorderColor: toolbarBorderColor,
+        onConfirm: this.onConfirm,
+        onClose: this.onClose
+      });
+    };
+
     this.state = {
       visible: false,
-      pickersHeight: 0
+      pickersHeight: 0,
+      selected: []
     };
   }
   /**
@@ -1109,16 +1178,14 @@ class SegmentedPicker extends Component {
       nativeTestID,
       options,
       defaultSelections,
-      size,
-      confirmText,
-      titleText,
-      confirmTextColor,
       pickerItemTextColor,
-      toolbarBackgroundColor,
-      toolbarBorderColor,
       selectionBackgroundColor,
       selectionBorderColor,
-      backgroundColor
+      backgroundColor,
+      selectionSeparator,
+      pickerColumnHeaderTextStyle,
+      pickerColumsStyle,
+      selectionBorder
     } = this.props;
     return (
       /*#__PURE__*/
@@ -1175,17 +1242,29 @@ class SegmentedPicker extends Component {
           borderRadius: 10,
           marginRight: '8%'
         }]
+      }, this.customHeaderBarHandle(), pickerColumnHeaderTextStyle &&
+      /*#__PURE__*/
+      React.createElement(View, {
+        style: styles.headerSelections
+      }, SegmentedPicker.ApplyPickerOptionDefaults(options).map(({
+        key: column,
+        flex
+      }) =>
+      /*#__PURE__*/
+      React.createElement(View, {
+        style: [styles.pickerColumn, {
+          flex
+        }, styles.pickerColumnHeader],
+        key: `${column}`
       },
       /*#__PURE__*/
-      React.createElement(Toolbar, {
-        confirmText: confirmText,
-        titleText: titleText,
-        confirmTextColor: confirmTextColor,
-        toolbarBackground: toolbarBackgroundColor,
-        toolbarBorderColor: toolbarBorderColor,
-        onConfirm: this.onConfirm,
-        onClose: this.onClose
-      }),
+      React.createElement(View, {
+        style: styles.pickerList
+      },
+      /*#__PURE__*/
+      React.createElement(Text, {
+        style: pickerColumnHeaderTextStyle
+      }, column))))),
       /*#__PURE__*/
       React.createElement(View, {
         style: styles.selectableArea
@@ -1215,11 +1294,13 @@ class SegmentedPicker extends Component {
       /*#__PURE__*/
       React.createElement(SelectionMarker, {
         backgroundColor: selectionBackgroundColor,
-        borderColor: selectionBorderColor
+        borderColor: selectionBorderColor,
+        selectionSeparator: selectionSeparator,
+        selectionBorder: selectionBorder
       }),
       /*#__PURE__*/
       React.createElement(View, {
-        style: styles.pickerColumns,
+        style: [styles.pickerColumns, pickerColumsStyle],
         onLayout: this.measurePickersHeight
       }, SegmentedPicker.ApplyPickerOptionDefaults(options).map(({
         key: column,
@@ -1276,15 +1357,7 @@ class SegmentedPicker extends Component {
           android: undefined
         }),
         testID: `${columnTestID}`
-      }))))))),
-      /*#__PURE__*/
-      React.createElement(Bottombar, {
-        confirmText: confirmText,
-        toolbarBackground: toolbarBackgroundColor,
-        toolbarBorderColor: toolbarBorderColor,
-        onConfirm: this.onConfirm,
-        onClose: this.onClose
-      })),
+      }))))))), this.customBottomBarHandle()),
       /*#__PURE__*/
       React.createElement(TouchableWithoutFeedback, {
         onPress: this.onCancel,

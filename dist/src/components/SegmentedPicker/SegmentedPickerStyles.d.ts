@@ -33,6 +33,14 @@ declare const _default: {
         marginRight: number;
         position: "relative";
     };
+    pickerColumnHeader: {
+        paddingLeft: number;
+        marginRight: number;
+        paddingBottom: number;
+    };
+    headerSelections: {
+        flexDirection: "row";
+    };
     pickerList: {
         width: string;
         height: string;

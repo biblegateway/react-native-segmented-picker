@@ -3,6 +3,7 @@ export declare const defaultProps: {
     native: boolean;
     options: never[];
     visible: boolean;
+    selected: {};
     defaultSelections: {};
     size: number;
     confirmText: string;
